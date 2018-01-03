@@ -60,7 +60,7 @@ func GetFirstItem(key string) (*DataItem, bool) {
 func GetItemByKeyAndTs(key string, ts int64) (*DataItem, *DataItem, *DataItem) {
 	listv, found := ItemMap.Get(key)
 	if !found || listv == nil {
-		return &DataItem{}, false
+		return nil, nil, nil
 	}
 
 	all := listv.(*tlist.SafeListLimited).FrontAll()
