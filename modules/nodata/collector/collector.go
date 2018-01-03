@@ -56,32 +56,52 @@ func GetFirstItem(key string) (*DataItem, bool) {
 	return first.(*DataItem), true
 }
 
-func GetItemByIndex(key string, index int) (*DataItem, bool) {
+//return leftTsItem, tsItem, rightTsItem
+func GetItemByKeyAndTs(key string, ts int64) (*DataItem, *DataItem, *DataItem) {
 	listv, found := ItemMap.Get(key)
 	if !found || listv == nil {
 		return &DataItem{}, false
 	}
 
 	all := listv.(*tlist.SafeListLimited).FrontAll()
-	if all == nil || len(all) <= index {
-		return &DataItem{}, false
+	if all == nil || len(all) == 0 {
+		return nil, nil, nil
 	}
 	if g.Config().Debug {
-		log.Printf("getItemByIndex key %s, index %d, list %v\n", key, index, all)
+		log.Printf("getItemByIndex key %s, ts %d, list %v\n", key, ts, all)
 	}
-	return all[index].(*DataItem), true
+	var leftTsItem, tsItem, rightTsItem DataItem
+	for _, item := range all {
+		itemTs := item.(*DataItem).Ts
+		if itemTs > ts {
+			if rightTsItem == nil || rightTsItem.Ts > itemTs {
+				rightTsItem = item
+			}
+		} else if itemTs == ts {
+			tsItem = item
+		} else {
+			if leftTsItem == nil || leftTsItem.Ts < itemTs {
+				leftTsItem = item
+			}
+		}
+	}
+	return leftTsItem, tsItem, rightTsItem
 }
 
 func AddItem(key string, val *DataItem) {
 	listv, found := ItemMap.Get(key)
 	if !found {
-		ll := tlist.NewSafeListLimited(10) //每个采集指标,缓存最新的3个数据点
+		ll := tlist.NewSafeListLimited(12) //每个采集指标,缓存最新的3个数据点，比10多2个点防止取不到after和before
 		ll.PushFrontViolently(val)
 		ItemMap.Put(key, ll)
 		return
 	}
+	lastData := listv.(*tlist.SafeListLimited).Front().(*DataItem)
 
-	listv.(*tlist.SafeListLimited).PushFrontViolently(val)
+	if val.Ts > lastData.Ts {
+		//不进行重复写，后续sort后，进行补数据
+		listv.(*tlist.SafeListLimited).PushFrontViolently(val)
+	}
 }
 
 func RemoveItem(key string) {

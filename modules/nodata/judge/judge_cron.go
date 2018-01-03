@@ -58,6 +58,9 @@ func judge() {
 	now := time.Now().Unix()
 	keys := config.Keys()
 	delayPeriod := int(g.Config().Sender.DelayPeriod)
+	if delayPeriod < 2 {
+		delayPeriod = 2;
+	}
 	for _, key := range keys {
 		ndcfg, found := config.GetNdConfig(key)
 		if !found {
@@ -65,11 +68,12 @@ func judge() {
 			continue
 		}
 		step := ndcfg.Step
-		mock := ndcfg.Mock
+		//mock := ndcfg.Mock
 
 		//item, found := collector.GetFirstItem(key)
-		item, found := collector.GetItemByIndex(key, delayPeriod - 1)
-		if !found {
+		generateTs := genTs(now, step)
+		leftTsItem, tsItem, rightTsItem := collector.GetItemByKeyAndTs(key, generateTs)
+		if leftTsItem == nil && tsItem == nil && rightTsItem == nil {
 			//没有数据,未开始采集,不处理
 			if g.Config().Debug {
 				log.Printf("getItemByIndex key %s, index %d, but not found item", key, delayPeriod)
@@ -77,40 +81,68 @@ func judge() {
 			continue
 		}
 
-		lastTs := now - getTimeout(step)
 		if g.Config().Debug {
-			log.Printf("cron lastTs %d, now %d,key %s, item %v\n", lastTs, now, key, item)
+			log.Printf("cron generateTs %d, left %v, middle %v, right %v\n", generateTs, leftTsItem, tsItem, rightTsItem)
 		}
-		if item.FStatus != "OK" || item.FTs < lastTs {
-			//数据采集失败,不处理
+
+		if tsItem != nil {
+			//此ts已经有数据了，不需要mock
+			TurnOk(key, now)
 			continue
 		}
 
-		if fCompare(mock, item.Value) == 0 {
-			if g.Config().Debug {
-				log.Printf("cron1 lastTs %d, mock %v, item %v\n", LastTs(key), mock, item)
-			}
-			//采集到的数据为mock数据,则认为上报超时了
-			if LastTs(key) + step <= now {
+		if leftTsItem != nil && rightTsItem != nil {
+			if rightTsItem.Ts - leftTsItem.Ts >= step * 2 { //左右两边的数据间隔>=2step则需要mock
 				TurnNodata(key, now)
-				genMock(genTs(now, step), key, ndcfg)
+				genMock(generateTs, key, ndcfg)
+				continue
 			}
+		}
+
+		if leftTsItem != nil && generateTs - leftTsItem.Ts > step {//即right==nil
+			TurnNodata(key, now)
+			genMock(generateTs, key, ndcfg)
 			continue
 		}
 
-		if item.Ts < lastTs {
-			if g.Config().Debug {
-				log.Printf("cron2 lastTs %d, item %v\n", LastTs(key), item)
-			}
-			//数据过期, 则认为上报超时
-			if LastTs(key) + step <= now {
-				TurnNodata(key, now)
-				genMock(genTs(now, step), key, ndcfg)
-			}
+		if leftTsItem != nil && rightTsItem.Ts - generateTs > step {//即left==nil
+			TurnNodata(key, now)
+			genMock(generateTs, key, ndcfg)
 			continue
 		}
 
-		TurnOk(key, now)
+		//lastTs := now - getTimeout(step)
+		//
+		//if item.FStatus != "OK" || item.FTs < lastTs {
+		//	//数据采集失败,不处理
+		//	continue
+		//}
+		//
+		//if fCompare(mock, item.Value) == 0 {
+		//	if g.Config().Debug {
+		//		log.Printf("cron1 lastTs %d, mock %v, item %v\n", LastTs(key), mock, item)
+		//	}
+		//	//采集到的数据为mock数据,则认为上报超时了
+		//	if LastTs(key) + step <= now {
+		//		TurnNodata(key, now)
+		//		genMock(generateTs, key, ndcfg)
+		//	}
+		//	continue
+		//}
+		//
+		//if item.Ts < lastTs {
+		//	if g.Config().Debug {
+		//		log.Printf("cron2 lastTs %d, item %v\n", LastTs(key), item)
+		//	}
+		//	//数据过期, 则认为上报超时
+		//	if LastTs(key) + step <= now {
+		//		TurnNodata(key, now)
+		//		genMock(generateTs, key, ndcfg)
+		//	}
+		//	continue
+		//}
+
+		//TurnOk(key, now)
 	}
 }
 
@@ -124,11 +156,17 @@ func genTs(nowTs int64, step int64) int64 {
 		step = 60
 	}
 	delayPeriod := int64(g.Config().Sender.DelayPeriod)
+	if delayPeriod < 2 {
+		delayPeriod = 2;
+	}
 	return nowTs - nowTs % step - delayPeriod * step
 }
 
 func getTimeout(step int64) int64 {
 	delayPeriod := int64(g.Config().Sender.DelayPeriod)
+	if delayPeriod < 2 {
+		delayPeriod = 2;
+	}
 	if step < 60 {
 		return (delayPeriod + 1) * 60 //60*3
 	}
