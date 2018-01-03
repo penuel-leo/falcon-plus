@@ -70,18 +70,18 @@ func GetItemByKeyAndTs(key string, ts int64) (*DataItem, *DataItem, *DataItem) {
 	if g.Config().Debug {
 		log.Printf("getItemByIndex key %s, ts %d, list %v\n", key, ts, all)
 	}
-	var leftTsItem, tsItem, rightTsItem DataItem
+	var leftTsItem, tsItem, rightTsItem *DataItem
 	for _, item := range all {
 		itemTs := item.(*DataItem).Ts
 		if itemTs > ts {
 			if rightTsItem == nil || rightTsItem.Ts > itemTs {
-				rightTsItem = item
+				rightTsItem = item.(*DataItem)
 			}
 		} else if itemTs == ts {
-			tsItem = item
+			tsItem = item.(*DataItem)
 		} else {
 			if leftTsItem == nil || leftTsItem.Ts < itemTs {
-				leftTsItem = item
+				leftTsItem = item.(*DataItem)
 			}
 		}
 	}
