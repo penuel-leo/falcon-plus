@@ -105,7 +105,7 @@ func judge() {
 			continue
 		}
 
-		if leftTsItem != nil && rightTsItem.Ts - generateTs > step {//即left==nil
+		if rightTsItem != nil && rightTsItem.Ts - generateTs > step {//即left==nil
 			TurnNodata(key, now)
 			genMock(generateTs, key, ndcfg)
 			continue
@@ -142,7 +142,7 @@ func judge() {
 		//	continue
 		//}
 
-		//TurnOk(key, now)
+		TurnOk(key, now)
 	}
 }
 
