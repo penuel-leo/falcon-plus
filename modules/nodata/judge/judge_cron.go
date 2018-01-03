@@ -68,19 +68,28 @@ func judge() {
 		mock := ndcfg.Mock
 
 		//item, found := collector.GetFirstItem(key)
-		item, found := collector.GetItemByIndex(key, delayPeriod)
+		item, found := collector.GetItemByIndex(key, delayPeriod - 1)
 		if !found {
 			//没有数据,未开始采集,不处理
+			if g.Config().Debug {
+				log.Printf("getItemByIndex key %s, index %d, but not found item", key, delayPeriod)
+			}
 			continue
 		}
 
 		lastTs := now - getTimeout(step)
+		if g.Config().Debug {
+			log.Printf("cron lastTs %d, now %d,key %s, item %v\n", lastTs, now, key, item)
+		}
 		if item.FStatus != "OK" || item.FTs < lastTs {
 			//数据采集失败,不处理
 			continue
 		}
 
 		if fCompare(mock, item.Value) == 0 {
+			if g.Config().Debug {
+				log.Printf("cron1 lastTs %d, mock %v, item %v\n", LastTs(key), mock, item)
+			}
 			//采集到的数据为mock数据,则认为上报超时了
 			if LastTs(key) + step <= now {
 				TurnNodata(key, now)
@@ -90,6 +99,9 @@ func judge() {
 		}
 
 		if item.Ts < lastTs {
+			if g.Config().Debug {
+				log.Printf("cron2 lastTs %d, item %v\n", LastTs(key), item)
+			}
 			//数据过期, 则认为上报超时
 			if LastTs(key) + step <= now {
 				TurnNodata(key, now)

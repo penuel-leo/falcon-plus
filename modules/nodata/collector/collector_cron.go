@@ -142,12 +142,18 @@ func fetchItemsAndStore(fetchKeys []string, fetchSize int) (size int, errt error
 		return 0, err
 	}
 
+	if g.Config().Debug {
+		log.Printf("fetchItemsAndStore resp: %v \n", resp)
+	}
 	// store items
 	fts := time.Now().Unix()
 	for _, glr := range resp {
 		//log.Printf("collect:%v\n", glr)
 		if glr == nil || glr.Value == nil {
 			continue
+		}
+		if g.Config().Debug {
+			log.Printf("fetchItemsAndStore glr: %v, resp: %v \n", glr, resp)
 		}
 		AddItem(cutils.PK2(glr.Endpoint, glr.Counter), NewDataItem(glr.Value.Timestamp, float64(glr.Value.Value), "OK", fts))
 	}

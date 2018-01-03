@@ -66,7 +66,9 @@ func GetItemByIndex(key string, index int) (*DataItem, bool) {
 	if all == nil || len(all) <= index {
 		return &DataItem{}, false
 	}
-
+	if g.Config().Debug {
+		log.Printf("getItemByIndex key %s, index %d, list %v\n", key, index, all)
+	}
 	return all[index].(*DataItem), true
 }
 
