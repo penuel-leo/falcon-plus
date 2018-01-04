@@ -30,7 +30,7 @@ import (
 	"github.com/spf13/viper"
 	connp "github.com/toolkits/conn_pool"
 	rpcpool "github.com/toolkits/conn_pool/rpc_conn_pool"
-	rings "github.com/toolkits/consistent/rings"
+	"github.com/toolkits/consistent/rings"
 	nset "github.com/toolkits/container/set"
 )
 
@@ -40,8 +40,8 @@ var (
 	GraphConnPools *backend.SafeRpcConnPools
 	clusterMap     map[string]string
 	gcluster       []string
-	connTimeout    int32
-	callTimeout    int32
+	connTimeout int32
+	callTimeout int32
 )
 
 // 服务节点的一致性哈希环
@@ -84,6 +84,9 @@ func QueryOne(para cmodel.GraphQueryParam) (resp *cmodel.GraphQueryResponse, err
 	endpoint, counter := para.Endpoint, para.Counter
 	resp = &cmodel.GraphQueryResponse{}
 	pool, addr, err := selectPool(endpoint, counter)
+
+	log.Println("graph.QueryOne param:", para, ",pool:", pool, " ,addr:", addr)
+
 	if err != nil {
 		return resp, err
 	}
@@ -142,6 +145,7 @@ func QueryOne(para cmodel.GraphQueryParam) (resp *cmodel.GraphQueryResponse, err
 			}
 			r.Resp.Values = fixed
 		}
+		log.Println("graph.QueryOne param:", para, " ,result:", r.Resp, ",value:", r.Resp.Values)
 		return r.Resp, nil
 	}
 }
