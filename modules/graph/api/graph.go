@@ -208,6 +208,9 @@ func (this *Graph) Query(param cmodel.GraphQueryParam, resp *cmodel.GraphQueryRe
 		// 例: start_ts=1484651400,step=60,则第一个数据时间为1484651460)
 		datas, _ = rrdtool.Fetch(filename, param.ConsolFun, start_ts - int64(step), end_ts, step)
 		datas_size = len(datas)
+		if g.Config().Debug {
+			log.Println("FetchAll datas:", datas, ",datas_size:", datas_size)
+		}
 	}
 
 	nowTs := time.Now().Unix()
@@ -336,6 +339,9 @@ func (this *Graph) Query(param cmodel.GraphQueryParam, resp *cmodel.GraphQueryRe
 	}
 
 	_RETURN_OK:
+	if g.Config().Debug {
+		log.Println("FetchAll final resp.Values:", resp.Values)
+	}
 	// statistics
 	proc.GraphQueryItemCnt.IncrBy(int64(len(resp.Values)))
 	return nil
