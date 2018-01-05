@@ -108,16 +108,16 @@ func handleItems(items []*cmodel.GraphItem) {
 		proc.GraphRpcRecvCnt.Incr()
 
 		// To Graph
-		//first := store.GraphItems.First(key)
-		//if first != nil && items[i].Timestamp <= first.Timestamp {
-		//	continue
-		//}
-		if !NeedStoreItem(key, items[i]) {
-			if g.Config().Debug{
-				log.Println("graph dont need store item:", items[i], ",key:" + key)
-			}
+		first := store.GraphItems.First(key)
+		if first != nil && items[i].Timestamp <= first.Timestamp {
 			continue
 		}
+		//if !NeedStoreItem(key, items[i]) {
+		//	if g.Config().Debug{
+		//		log.Println("graph dont need store item:", items[i], ",key:" + key)
+		//	}
+		//	continue
+		//}
 
 		store.GraphItems.PushFront(key, items[i], checksum, cfg)
 		if g.Config().Debug{
@@ -187,6 +187,10 @@ func (this *Graph) Query(param cmodel.GraphQueryParam, resp *cmodel.GraphQueryRe
 	// read cached items
 	items, flag := store.GraphItems.FetchAll(key)
 	items_size := len(items)
+	if g.Config().Debug {
+		log.Println("FetchAll items:", items, ",items_size:", items_size)
+	}
+
 
 	if cfg.Migrate.Enabled && flag & g.GRAPH_F_MISS != 0 {
 		node, _ := rrdtool.Consistent.Get(param.Endpoint + "/" + param.Counter)
@@ -339,9 +343,6 @@ func (this *Graph) Query(param cmodel.GraphQueryParam, resp *cmodel.GraphQueryRe
 	}
 
 	_RETURN_OK:
-	if g.Config().Debug {
-		log.Println("FetchAll final resp.Values:", resp.Values)
-	}
 	// statistics
 	proc.GraphQueryItemCnt.IncrBy(int64(len(resp.Values)))
 	return nil
