@@ -153,7 +153,11 @@ func (this *GraphItemMap) FetchAll(key string) ([]*cmodel.GraphItem, uint32) {
 		return []*cmodel.GraphItem{}, 0
 	}
 
-	return sl.FetchAll()
+	all, flag := sl.FetchAll()
+	if g.Config().Debug {
+		log.Println("FetchAll cacheItems:", all, ",flag:", flag)
+	}
+	return all, flag
 }
 
 func hashKey(key string) uint32 {

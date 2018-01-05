@@ -134,14 +134,11 @@ func handleItems(items []*cmodel.GraphItem) {
 func NeedStoreItem(key string, item *cmodel.GraphItem) bool {
 	cacheItems, _ := store.GraphItems.FetchAll(key)
 	if cacheItems == nil || len(cacheItems) == 0 {
-		if g.Config().Debug {
-			log.Println("cacheItems is empty for key:", key)
-		}
 		return true
 	}
 	minTs := item.Timestamp
 	for _, cacheItem := range cacheItems {
-		if cacheItem.Timestamp == item.Timestamp {
+		if cacheItem.Timestamp == item.Timestamp && cacheItem.Value >= item.Value {
 			return false
 		}
 		if minTs > cacheItem.Timestamp {
