@@ -113,12 +113,16 @@ func handleItems(items []*cmodel.GraphItem) {
 		//	continue
 		//}
 		if !NeedStoreItem(key, items[i]) {
-			log.Println("graph dont need store item:", items[i], ",key:" + key)
+			if g.Config().Debug{
+				log.Println("graph dont need store item:", items[i], ",key:" + key)
+			}
 			continue
 		}
 
 		store.GraphItems.PushFront(key, items[i], checksum, cfg)
-
+		if g.Config().Debug{
+			log.Println("store item success ", items[i])
+		}
 		// To Index
 		index.ReceiveItem(items[i], checksum)
 
@@ -130,7 +134,9 @@ func handleItems(items []*cmodel.GraphItem) {
 func NeedStoreItem(key string, item *cmodel.GraphItem) bool {
 	cacheItems, _ := store.GraphItems.FetchAll(key)
 	if cacheItems == nil || len(cacheItems) == 0 {
-		log.Println("cacheItems is empty for key:", key)
+		if g.Config().Debug {
+			log.Println("cacheItems is empty for key:", key)
+		}
 		return true
 	}
 	minTs := item.Timestamp
