@@ -127,7 +127,7 @@ func handleItems(items []*cmodel.GraphItem) {
 	}
 }
 
-func NeedStoreItem(key string, item cmodel.GraphItem) bool {
+func NeedStoreItem(key string, item *cmodel.GraphItem) bool {
 	cacheItems, _ := store.GraphItems.FetchAll(key)
 	if cacheItems == nil || len(cacheItems) == 0 {
 		log.Println("cacheItems is empty for key:", key)
