@@ -108,10 +108,15 @@ func handleItems(items []*cmodel.GraphItem) {
 		proc.GraphRpcRecvCnt.Incr()
 
 		// To Graph
-		first := store.GraphItems.First(key)
-		if first != nil && items[i].Timestamp <= first.Timestamp {
+		//first := store.GraphItems.First(key)
+		//if first != nil && items[i].Timestamp <= first.Timestamp {
+		//	continue
+		//}
+		if !NeedStoreItem(key, items[i]) {
+			log.Println("graph dont need store item:", items[i], ",key:" + key)
 			continue
 		}
+
 		store.GraphItems.PushFront(key, items[i], checksum, cfg)
 
 		// To Index
@@ -120,6 +125,28 @@ func handleItems(items []*cmodel.GraphItem) {
 		// To History
 		store.AddItem(checksum, items[i])
 	}
+}
+
+func NeedStoreItem(key string, item cmodel.GraphItem) bool {
+	cacheItems, _ := store.GraphItems.FetchAll(key)
+	if cacheItems == nil || len(cacheItems) == 0 {
+		log.Println("cacheItems is empty for key:", key)
+		return true
+	}
+	minTs := item.Timestamp
+	for _, cacheItem := range cacheItems {
+		if cacheItem.Timestamp == item.Timestamp {
+			return false
+		}
+		if minTs > cacheItem.Timestamp {
+			minTs = cacheItem.Timestamp
+		}
+	}
+	if minTs > item.Timestamp {
+		//比缓存里面的数据都小，不能判断是否已经有值了，所以不存
+		return false
+	}
+	return true
 }
 
 func (this *Graph) Query(param cmodel.GraphQueryParam, resp *cmodel.GraphQueryResponse) error {
@@ -144,9 +171,9 @@ func (this *Graph) Query(param cmodel.GraphQueryParam, resp *cmodel.GraphQueryRe
 	resp.DsType = dsType
 	resp.Step = step
 
-	start_ts := param.Start - param.Start%int64(step)
-	end_ts := param.End - param.End%int64(step) + int64(step)
-	if end_ts-start_ts-int64(step) < 1 {
+	start_ts := param.Start - param.Start % int64(step)
+	end_ts := param.End - param.End % int64(step) + int64(step)
+	if end_ts - start_ts - int64(step) < 1 {
 		return nil
 	}
 
@@ -158,7 +185,7 @@ func (this *Graph) Query(param cmodel.GraphQueryParam, resp *cmodel.GraphQueryRe
 	items, flag := store.GraphItems.FetchAll(key)
 	items_size := len(items)
 
-	if cfg.Migrate.Enabled && flag&g.GRAPH_F_MISS != 0 {
+	if cfg.Migrate.Enabled && flag & g.GRAPH_F_MISS != 0 {
 		node, _ := rrdtool.Consistent.Get(param.Endpoint + "/" + param.Counter)
 		done := make(chan error, 1)
 		res := &cmodel.GraphAccurateQueryResponse{}
@@ -176,13 +203,13 @@ func (this *Graph) Query(param cmodel.GraphQueryParam, resp *cmodel.GraphQueryRe
 		// read data from rrd file
 		// 从RRD中获取数据不包含起始时间点
 		// 例: start_ts=1484651400,step=60,则第一个数据时间为1484651460)
-		datas, _ = rrdtool.Fetch(filename, param.ConsolFun, start_ts-int64(step), end_ts, step)
+		datas, _ = rrdtool.Fetch(filename, param.ConsolFun, start_ts - int64(step), end_ts, step)
 		datas_size = len(datas)
 	}
 
 	nowTs := time.Now().Unix()
-	lastUpTs := nowTs - nowTs%int64(step)
-	rra1StartTs := lastUpTs - int64(rrdtool.RRA1PointCnt*step)
+	lastUpTs := nowTs - nowTs % int64(step)
+	rra1StartTs := lastUpTs - int64(rrdtool.RRA1PointCnt * step)
 
 	// consolidated, do not merge
 	if start_ts < rra1StartTs {
@@ -203,13 +230,13 @@ func (this *Graph) Query(param cmodel.GraphQueryParam, resp *cmodel.GraphQueryRe
 		cache := make([]*cmodel.RRDData, 0)
 
 		ts := items[0].Timestamp
-		itemEndTs := items[items_size-1].Timestamp
+		itemEndTs := items[items_size - 1].Timestamp
 		itemIdx := 0
 		if dsType == g.DERIVE || dsType == g.COUNTER {
 			for ts < itemEndTs {
-				if itemIdx < items_size-1 && ts == items[itemIdx].Timestamp &&
-					ts == items[itemIdx+1].Timestamp-int64(step) {
-					val = cmodel.JsonFloat(items[itemIdx+1].Value-items[itemIdx].Value) / cmodel.JsonFloat(step)
+				if itemIdx < items_size - 1 && ts == items[itemIdx].Timestamp &&
+					ts == items[itemIdx + 1].Timestamp - int64(step) {
+					val = cmodel.JsonFloat(items[itemIdx + 1].Value - items[itemIdx].Value) / cmodel.JsonFloat(step)
 					if val < 0 {
 						val = cmodel.JsonFloat(math.NaN())
 					}
@@ -305,7 +332,7 @@ func (this *Graph) Query(param cmodel.GraphQueryParam, resp *cmodel.GraphQueryRe
 		resp.Values = ret
 	}
 
-_RETURN_OK:
+	_RETURN_OK:
 	// statistics
 	proc.GraphQueryItemCnt.IncrBy(int64(len(resp.Values)))
 	return nil
@@ -405,7 +432,7 @@ func GetLast(endpoint, counter string) *cmodel.RRDData {
 			delta_v = 0
 		}
 
-		return cmodel.NewRRDData(f0.Timestamp, delta_v/float64(delta_ts))
+		return cmodel.NewRRDData(f0.Timestamp, delta_v / float64(delta_ts))
 	}
 
 	return cmodel.NewRRDData(0, 0.0)

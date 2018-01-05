@@ -96,9 +96,22 @@ func AddItem(key string, val *DataItem) {
 		ItemMap.Put(key, ll)
 		return
 	}
-	lastData := listv.(*tlist.SafeListLimited).Front().(*DataItem)
+	all := listv.(*tlist.SafeListLimited).FrontAll()
+	minTs := val.Ts
+	for _, item := range all {
+		itemTs := item.(*DataItem).Ts
+		if minTs > itemTs {
+			minTs = itemTs
+		}
+		if itemTs == val.Ts {//已经有值了，不用存储
+			return
+		}
+	}
 
-	if val.Ts > lastData.Ts {
+	if len(all) < 12 {//不够12个，直接存
+		listv.(*tlist.SafeListLimited).PushFrontViolently(val)
+	}
+	if val.Ts > minTs {//TODO 有可能push的时候，把不是minTs的数据pop出去
 		//不进行重复写，后续sort后，进行补数据
 		listv.(*tlist.SafeListLimited).PushFrontViolently(val)
 	}
