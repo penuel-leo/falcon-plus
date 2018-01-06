@@ -95,7 +95,6 @@ func PopAllMail() []*model.Mail {
 		}
 
 		if reply == "" || reply == "nil" {
-			log.Println("rpop mail reply is empty")
 			continue
 		}
 
@@ -107,7 +106,7 @@ func PopAllMail() []*model.Mail {
 		}
 
 		ret = append(ret, &mail)
+		log.Println("rpop mail rets is: ", ret)
 	}
-	log.Println("rpop mail rets is: ", ret)
 	return ret
 }
