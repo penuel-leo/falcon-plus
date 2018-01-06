@@ -95,18 +95,19 @@ func PopAllMail() []*model.Mail {
 		}
 
 		if reply == "" || reply == "nil" {
+			log.Println("rpop mail reply is empty")
 			continue
 		}
 
 		var mail model.Mail
 		err = json.Unmarshal([]byte(reply), &mail)
 		if err != nil {
-			log.Error(err, reply)
+			log.Error("mail unmarshal fail", err, reply)
 			continue
 		}
 
 		ret = append(ret, &mail)
 	}
-
+	log.Println("rpop mail rets is: ", ret)
 	return ret
 }

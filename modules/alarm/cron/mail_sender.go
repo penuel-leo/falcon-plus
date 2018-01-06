@@ -36,6 +36,7 @@ func ConsumeMail() {
 
 func SendMailList(L []*model.Mail) {
 	for _, mail := range L {
+		log.Debugf("send mail one :%v, ", mail)
 		MailWorkerChan <- 1
 		go SendMail(mail)
 	}
