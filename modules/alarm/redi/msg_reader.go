@@ -39,7 +39,7 @@ func PopAllSms() []*model.Sms {
 		}
 
 		if reply == "" || reply == "nil" {
-			continue
+			break
 		}
 
 		var sms model.Sms
@@ -67,7 +67,7 @@ func PopAllIM() []*model.IM {
 		}
 
 		if reply == "" || reply == "nil" {
-			continue
+			break
 		}
 
 		var im model.IM
@@ -94,8 +94,8 @@ func PopAllMail() []*model.Mail {
 			break
 		}
 
-		if reply == "" || reply == "nil" {
-			continue
+		if reply == "" || reply == "nil" { //没有最新的
+			break
 		}
 
 		var mail model.Mail
