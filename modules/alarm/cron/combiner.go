@@ -79,7 +79,7 @@ func combineMail() {
 		for i := 0; i < size; i++ {
 			contentArr[i] = arr[i].Content
 		}
-		content := strings.Join(contentArr, "\r\n")
+		content := strings.Join(contentArr, "<br/>")
 
 		log.Debugf("combined mail subject:%s, content:%s", subject, content)
 		redi.WriteMail([]string{arr[0].Email}, subject, content)
