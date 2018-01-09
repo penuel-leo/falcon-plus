@@ -48,10 +48,10 @@ func SinglePopEvent(high bool, params ...interface{}) {
 		eventmodel.InsertEvent(&event)
 		// events no longer saved in memory
 
-		//if err != nil {
-		//	time.Sleep(time.Second)
-		//	continue
-		//}
+		if err != nil {
+			time.Sleep(time.Second)
+			continue
+		}
 
 		consume(&event, high)
 	}
