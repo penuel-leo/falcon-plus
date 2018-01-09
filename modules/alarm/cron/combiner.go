@@ -204,7 +204,7 @@ func popAllSmsDto() []*SmsDto {
 		}
 
 		if reply == "" || reply == "nil" {
-			continue
+			break
 		}
 
 		var smsDto SmsDto
@@ -232,7 +232,7 @@ func popAllMailDto() []*MailDto {
 		}
 
 		if reply == "" || reply == "nil" {
-			continue
+			break
 		}
 
 		var mailDto MailDto
@@ -260,7 +260,7 @@ func popAllImDto() []*ImDto {
 		}
 
 		if reply == "" || reply == "nil" {
-			continue
+			break
 		}
 
 		var imDto ImDto

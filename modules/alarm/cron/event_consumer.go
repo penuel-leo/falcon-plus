@@ -31,6 +31,9 @@ func consume(event *cmodel.Event, isHigh bool) {
 	}
 
 	action := api.GetAction(actionId)
+
+	log.Debugf("consume event: %s, high: %v, action: %v", event.String(), isHigh, action)
+
 	if action == nil {
 		return
 	}
